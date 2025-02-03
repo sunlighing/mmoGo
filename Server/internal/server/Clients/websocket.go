@@ -20,7 +20,7 @@ type WebSocketClient struct {
 	logger   *log.Logger
 }
 
-func NewWebSocketClient(hub *server.Hub, writer *http.ResponseWriter, requst *http.Request) (server.ClientInterfacer, error) {
+func NewWebSocketClient(hub *server.Hub, writer http.ResponseWriter, requst *http.Request) (server.ClientInterfacer, error) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -28,7 +28,7 @@ func NewWebSocketClient(hub *server.Hub, writer *http.ResponseWriter, requst *ht
 	}
 	//可以禁止默认连接
 
-	conn, err := upgrader.Upgrade(*writer, requst, nil)
+	conn, err := upgrader.Upgrade(writer, requst, nil)
 
 	if err != nil {
 		return nil, err
@@ -49,15 +49,17 @@ func (c *WebSocketClient) Id() uint64 {
 }
 
 func (c *WebSocketClient) ProcessMessage(senderId uint64, messgae packets.Msg) {
-
+	c.logger.Printf("Received message: %T from client - echoing back ...", messgae)
+	c.SocketSend(messgae)
 }
 
-func (c *WebSocketClient) SocketSend(msg packets.Msg) {
-
+func (c *WebSocketClient) SocketSend(message packets.Msg) {
+	c.SocketSendAs(message, c.id)
 }
 
 func (c *WebSocketClient) PassToPeer(message packets.Msg, peerId uint64) {
-	if peer, exists := c.hub.Clients[peerId]; exists {
+	//c.hub.Clients[peerId]
+	if peer, exists := c.hub.Clients.Get(peerId); exists {
 		peer.ProcessMessage(c.id, message)
 	}
 }
@@ -68,7 +70,7 @@ func (c *WebSocketClient) PassToPeer(message packets.Msg, peerId uint64) {
 
 func (c *WebSocketClient) ReadPump() {
 	defer func() {
-		c.logger.Panicln("Close read pump")
+		c.logger.Printf("Close read pump")
 		c.Close("read pump closed")
 	}()
 
@@ -78,7 +80,7 @@ func (c *WebSocketClient) ReadPump() {
 		if err != nil {
 			//异常关闭
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				c.logger.Panicf("Error %v", err)
+				c.logger.Printf("Error %v", err)
 			}
 			break
 		}
@@ -137,12 +139,17 @@ func (c *WebSocketClient) WritePump() {
 }
 
 func (c *WebSocketClient) Close(reson string) {
-
+	c.logger.Printf("Closing Connection because %s", reson)
+	c.hub.UnregisterChan <- c
+	c.conn.Close()
+	if _, closed := <-c.sendChan; !closed {
+		close(c.sendChan)
+	}
 }
 
 func (c *WebSocketClient) Initialize(id uint64) {
 	c.id = id
-	c.logger.SetPrefix(fmt.Sprintf("Client %d", c.id))
+	c.logger.SetPrefix(fmt.Sprintf("ClientID : %d ,", c.id))
 }
 
 func (c *WebSocketClient) SocketSendAs(message packets.Msg, senderId uint64) {

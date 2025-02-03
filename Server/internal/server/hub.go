@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 	"net/http"
+	"server/internal/server/objects"
 	"server/pkg/packets"
 )
 
@@ -31,7 +32,7 @@ type ClientInterfacer interface {
 }
 
 type Hub struct {
-	Clients map[uint64]ClientInterfacer
+	Clients *objects.SharedCollection[ClientInterfacer] //map[uint64]ClientInterfacer
 
 	// 广播频道
 	BroadcastChan chan *packets.Packet
@@ -63,7 +64,7 @@ type Hub struct {
 // clients and broadcast the message to all the clients.
 func NewHub() *Hub {
 	return &Hub{
-		Clients:        make(map[uint64]ClientInterfacer),
+		Clients:        objects.NewSharedCollection[ClientInterfacer](), //make(map[uint64]ClientInterfacer),
 		BroadcastChan:  make(chan *packets.Packet),
 		RegisterChan:   make(chan ClientInterfacer),
 		UnregisterChan: make(chan ClientInterfacer),
@@ -76,15 +77,22 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.RegisterChan:
-			client.Initialize(uint64(len(h.Clients)))
+			//client.Initialize(uint64(len(h.Clients)))
+			client.Initialize(h.Clients.Add(client))
 		case client := <-h.UnregisterChan:
-			h.Clients[client.Id()] = nil
+			// h.Clients[client.Id()] = nil
+			h.Clients.Remove(client.Id())
 		case packet := <-h.BroadcastChan:
-			for id, client := range h.Clients {
-				if id != packet.SenderId {
+			// for id, client := range h.Clients {
+			// 	if id != packet.SenderId {
+			// 		client.ProcessMessage(packet.SenderId, packet.Msg)
+			// 	}
+			// }
+			h.Clients.ForEach(func(clientId uint64, client ClientInterfacer) {
+				if clientId != packet.SenderId {
 					client.ProcessMessage(packet.SenderId, packet.Msg)
 				}
-			}
+			})
 		}
 	}
 }
