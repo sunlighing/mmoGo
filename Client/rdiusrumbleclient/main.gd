@@ -2,6 +2,8 @@ extends Node
 
 const packets := preload("res://packets/packets.gd")
 
+@onready var _log := $Log
+
 func _ready() -> void:
 	WS.connected_to_server.connect(_on_ws_connected_to_server)
 	WS.connection_closed.connect(_on_ws_connection_closed)
