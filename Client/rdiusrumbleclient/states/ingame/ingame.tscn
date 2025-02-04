@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://cfmq3761q7io1"]
+
+[ext_resource type="Script" path="res://states/ingame/ingame.gd" id="1_iy2ri"]
+[ext_resource type="Script" path="res://classes/log/log.gd" id="2_6v0xh"]
+
+[node name="InGame" type="Node"]
+script = ExtResource("1_iy2ri")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="LineEdit" type="LineEdit" parent="UI"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 31.0
+grow_horizontal = 2
+
+[node name="Log" type="RichTextLabel" parent="UI"]
+custom_minimum_size = Vector2(0, 400)
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -618.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("2_6v0xh")

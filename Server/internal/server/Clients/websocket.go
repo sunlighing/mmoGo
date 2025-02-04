@@ -74,17 +74,12 @@ func (c *WebSocketClient) SetState(state server.ClientStateHandler) {
 	}
 }
 
-func (c *WebSocketClient) ProcessMessage(senderId uint64, messgae packets.Msg) {
+func (c *WebSocketClient) ProcessMessage(senderId uint64, message packets.Msg) {
 	// c.logger.Printf("Received message: %T from client - echoing back ...", messgae)
 	// c.SocketSend(messgae)
 
 	//如果是自己就广播给别人
-	if senderId == c.id {
-		c.Broadcast(messgae)
-	} else {
-		//如果不是就发给自己
-		c.SocketSendAs(messgae, senderId)
-	}
+	c.state.HandlerMessage(senderId, message)
 
 }
 
@@ -175,6 +170,9 @@ func (c *WebSocketClient) WritePump() {
 
 func (c *WebSocketClient) Close(reson string) {
 	c.logger.Printf("Closing Connection because %s", reson)
+
+	c.SetState(nil)
+
 	c.hub.UnregisterChan <- c
 	c.conn.Close()
 	if _, closed := <-c.sendChan; !closed {

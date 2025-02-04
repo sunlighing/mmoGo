@@ -29,7 +29,12 @@ func (c *Connected) OnEnter() {
 }
 
 func (c *Connected) HandlerMessage(senderId uint64, message packets.Msg) {
-
+	if senderId == c.client.Id() {
+		c.client.Broadcast(message)
+	} else {
+		//如果不是就发给自己
+		c.client.SocketSendAs(message, senderId)
+	}
 }
 
 func (c *Connected) OnExit() {
