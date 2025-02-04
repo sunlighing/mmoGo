@@ -7,8 +7,28 @@ import (
 	"server/pkg/packets"
 )
 
+// 客户端状态机句柄
+type ClientStateHandler interface {
+	Name() string
+
+	//注入一个客户端的handler
+	SetClient(client ClientInterfacer)
+
+	//进入时的执行函数
+	OnEnter()
+
+	//消息句柄
+	HandlerMessage(senderId uint64, message packets.Msg)
+
+	//退出时的执行函数
+	OnExit()
+}
+
 type ClientInterfacer interface {
 	Initialize(id uint64)
+
+	SetState(newState ClientStateHandler)
+
 	Id() uint64
 
 	//处理消息

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"server/internal/server"
+	"server/internal/server/states"
 	"server/pkg/packets"
 
 	"github.com/gorilla/websocket"
@@ -17,6 +18,7 @@ type WebSocketClient struct {
 	conn     *websocket.Conn
 	hub      *server.Hub
 	sendChan chan *packets.Packet
+	state    server.ClientStateHandler
 	logger   *log.Logger
 }
 
@@ -48,9 +50,42 @@ func (c *WebSocketClient) Id() uint64 {
 	return c.id
 }
 
+func (c *WebSocketClient) SetState(state server.ClientStateHandler) {
+	prevStateName := "None"
+
+	if c.state != nil {
+		prevStateName = c.state.Name()
+		c.state.OnExit()
+	}
+
+	newStateName := "None"
+
+	if state != nil {
+		newStateName = state.Name()
+	}
+
+	c.logger.Printf("Switching from state %s to %s", prevStateName, newStateName)
+
+	c.state = state
+
+	if c.state != nil {
+		c.state.SetClient(c)
+		c.state.OnEnter()
+	}
+}
+
 func (c *WebSocketClient) ProcessMessage(senderId uint64, messgae packets.Msg) {
-	c.logger.Printf("Received message: %T from client - echoing back ...", messgae)
-	c.SocketSend(messgae)
+	// c.logger.Printf("Received message: %T from client - echoing back ...", messgae)
+	// c.SocketSend(messgae)
+
+	//如果是自己就广播给别人
+	if senderId == c.id {
+		c.Broadcast(messgae)
+	} else {
+		//如果不是就发给自己
+		c.SocketSendAs(messgae, senderId)
+	}
+
 }
 
 func (c *WebSocketClient) SocketSend(message packets.Msg) {
@@ -150,6 +185,9 @@ func (c *WebSocketClient) Close(reson string) {
 func (c *WebSocketClient) Initialize(id uint64) {
 	c.id = id
 	c.logger.SetPrefix(fmt.Sprintf("ClientID : %d ,", c.id))
+	c.SetState(&states.Connected{})
+	// c.SocketSend(packets.NewId(c.id))
+	c.logger.Printf("Sent ID to Client")
 }
 
 func (c *WebSocketClient) SocketSendAs(message packets.Msg, senderId uint64) {
