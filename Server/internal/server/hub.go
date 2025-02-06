@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
+	"server/internal/server/db"
 	"server/internal/server/objects"
 	"server/pkg/packets"
 
@@ -16,6 +18,19 @@ import (
 //
 //go:embed db/config/schema.sql
 var schemaGenSql string
+
+// A structure for database transaction context
+type DbTx struct {
+	Ctx     context.Context
+	Queries *db.Queries
+}
+
+func (h *Hub) NewDbTx() *DbTx {
+	return &DbTx{
+		Ctx:     context.Background(),
+		Queries: db.New(h.dbPool),
+	}
+}
 
 // 客户端状态机句柄
 type ClientStateHandler interface {
@@ -55,6 +70,9 @@ type ClientInterfacer interface {
 	//持续化WebSocket
 	ReadPump()
 	WritePump()
+
+	// A reference to the database transaction context for this client 管理客户端的DB
+	DbTx() *DbTx
 
 	Close(reson string)
 
@@ -114,6 +132,12 @@ func NewHub() *Hub {
 
 func (h *Hub) Run() {
 	log.Println("Awaiting for connections...")
+
+	//初始化数据库
+	log.Println("Initializing database...")
+	if _, err := h.dbPool.ExecContext(context.Background(), schemaGenSql); err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		select {
