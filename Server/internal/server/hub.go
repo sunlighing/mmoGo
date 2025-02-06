@@ -1,11 +1,21 @@
 package server
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"server/internal/server/objects"
 	"server/pkg/packets"
+
+	_ "embed"
+
+	_ "modernc.org/sqlite"
 )
+
+// Embed the database schema to be used when creating the database tables
+//
+//go:embed db/config/schema.sql
+var schemaGenSql string
 
 // 客户端状态机句柄
 type ClientStateHandler interface {
@@ -62,6 +72,9 @@ type Hub struct {
 
 	//反注册渠道
 	UnregisterChan chan ClientInterfacer
+
+	// Database connection pool db 连接池
+	dbPool *sql.DB
 }
 
 // NewHub returns a new Hub
@@ -83,11 +96,19 @@ type Hub struct {
 // The Hub is the heart of the server, it's responsible for manage all the
 // clients and broadcast the message to all the clients.
 func NewHub() *Hub {
+
+	//定义数据库池
+	dbPool, err := sql.Open("sqlite", "db.sqlite")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return &Hub{
 		Clients:        objects.NewSharedCollection[ClientInterfacer](), //make(map[uint64]ClientInterfacer),
 		BroadcastChan:  make(chan *packets.Packet),
 		RegisterChan:   make(chan ClientInterfacer),
 		UnregisterChan: make(chan ClientInterfacer),
+		dbPool:         dbPool,
 	}
 }
 
