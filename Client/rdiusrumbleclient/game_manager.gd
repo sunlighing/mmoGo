@@ -3,11 +3,13 @@ extends Node
 enum State {
 	ENTERED,
 	INGAME,
+	CONNECTED,  #连接状态
 }
 #[State,String] 
 var _states_scene:Dictionary ={
 	State.ENTERED:"res://states/entered/entered.tscn",
 	State.INGAME:"res://states/ingame/ingame.tscn",
+	State.CONNECTED: "res://states/connected/connected.tscn",
 }
 
 var client_id:int 
