@@ -32,6 +32,11 @@ func (h *Hub) NewDbTx() *DbTx {
 	}
 }
 
+type SharedGameObjects struct {
+	//这个ID 是client id 连接ID
+	Players *objects.SharedCollection[*objects.Player]
+}
+
 // 客户端状态机句柄
 type ClientStateHandler interface {
 	Name() string
@@ -93,6 +98,9 @@ type Hub struct {
 
 	// Database connection pool db 连接池
 	dbPool *sql.DB
+
+	//游戏池的对象
+	SharedGameObjects *SharedGameObjects
 }
 
 // NewHub returns a new Hub
