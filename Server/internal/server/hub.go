@@ -81,6 +81,8 @@ type ClientInterfacer interface {
 
 	Close(reson string)
 
+	SharedGameObjects() *SharedGameObjects
+
 	Broadcast(message packets.Msg)
 }
 
@@ -135,6 +137,9 @@ func NewHub() *Hub {
 		RegisterChan:   make(chan ClientInterfacer),
 		UnregisterChan: make(chan ClientInterfacer),
 		dbPool:         dbPool,
+		SharedGameObjects: &SharedGameObjects{
+			Players: objects.NewSharedCollection[*objects.Player](),
+		},
 	}
 }
 

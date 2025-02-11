@@ -205,3 +205,8 @@ func (c *WebSocketClient) Broadcast(message packets.Msg) {
 func (c *WebSocketClient) DbTx() *server.DbTx {
 	return c.dbTx
 }
+
+//返回一个共享游戏的集合
+func (c *WebSocketClient) SharedGameObjects() *server.SharedGameObjects {
+	return c.hub.SharedGameObjects
+}
