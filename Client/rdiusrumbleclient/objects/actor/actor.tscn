@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://re54s3tux5fi"]
+
+[ext_resource type="Script" path="res://objects/actor/actor.gd" id="1_j4jrq"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_lso8l"]
+resource_local_to_scene = true
+
+[node name="Actor" type="Area2D"]
+script = ExtResource("1_j4jrq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+rotation = -0.359538
+shape = SubResource("CircleShape2D_lso8l")
+disabled = true
+one_way_collision = true
+one_way_collision_margin = 0.0
+debug_color = Color(0.390301, 0.487562, 0.955761, 0.42)
+
+[node name="Label" type="Label" parent="."]
+offset_left = -21.0
+offset_top = -12.0
+offset_right = 23.0
+offset_bottom = 11.0
+size_flags_horizontal = 4
+text = "name"
+
+[node name="Camera2D" type="Camera2D" parent="."]
