@@ -1,5 +1,7 @@
 package packets
 
+import "server/internal/server/objects"
+
 type Msg = isPacket_Msg
 
 func NewChat(text string) Msg {
@@ -32,5 +34,20 @@ func NewDenyResponse(reason string) Msg {
 func NewOkResponse() Msg {
 	return &Packet_OkResponse{
 		OkResponse: &OkResponseMessage{},
+	}
+}
+
+//构建新的玩家的信息
+func NewPlayer(id uint64, player *objects.Player) Msg {
+	return &Packet_Player{
+		Player: &PlayerMessage{
+			Id:        id,
+			Name:      player.Name,
+			X:         player.X,
+			Y:         player.Y,
+			Radius:    player.Radius,
+			Direction: player.Direction,
+			Speed:     player.Speed,
+		},
 	}
 }
