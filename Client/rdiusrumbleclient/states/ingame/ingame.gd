@@ -3,11 +3,11 @@ extends Node
 const packets := preload("res://packets/packets.gd")
 const Actor := preload("res://objects/actor/actor.gd")
 
-
 @onready var _line_edit: LineEdit = $UI/LineEdit
 @onready var _log: Log = $UI/Log
 
 @onready var _world: Node2D = $World
+var _players:= {}
 
 func _ready() -> void:
 	WS.connection_closed.connect(_on_ws_connection_closed)
@@ -56,5 +56,14 @@ func _handle_player_msg(sender_id: int, player_msg: packets.PlayerMessage) -> vo
 
 	var is_player := actor_id == GameManager.client_id
 	
-	var actor := Actor.instantiate(actor_id, actor_name, x, y, radius, speed, is_player)
-	_world.add_child(actor)
+	if actor_id not in _players:
+		# This is a new player, so we need to create a new actor
+		var actor := Actor.instantiate(actor_id, actor_name, x, y, radius, speed, is_player)
+		_world.add_child(actor)
+		_players[actor_id] = actor
+	
+	#if actor_id in _players:
+		# This is an existing player, so we need to update their position
+		#var actor2 := _players.get(actor_id)
+		#actor2.position.x = x
+		#actor2.position.y = y
