@@ -55,6 +55,8 @@ func (g *InGame) HandlerMessage(senderId uint64, message packets.Msg) {
 		g.handlePlayer(senderId, message)
 	case *packets.Packet_PlayerDirection:
 		g.handlePlayerDirection(senderId, message)
+	case *packets.Packet_Chat:
+        g.handleChat(senderId, message)
 	}
 }
 
@@ -113,4 +115,13 @@ func (g *InGame) handlePlayerDirection(senderId uint64, message *packets.Packet_
 			go g.playerUpdateLoop(ctx)
 		}
 	}
+}
+
+// 游戏内聊天
+func (g *InGame) handleChat(senderId uint64, message *packets.Packet_Chat) {
+    if senderId == g.client.Id() {
+        g.client.Broadcast(message)
+    } else {
+        g.client.SocketSendAs(message, senderId)
+    }
 }

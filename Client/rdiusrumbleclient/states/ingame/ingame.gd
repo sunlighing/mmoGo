@@ -7,7 +7,9 @@ const Actor := preload("res://objects/actor/actor.gd")
 @onready var _log: Log = $UI/Log
 
 @onready var _world: Node2D = $World
+
 var _players:= {}
+
 
 func _ready() -> void:
 	WS.connection_closed.connect(_on_ws_connection_closed)
@@ -27,7 +29,9 @@ func _on_ws_packet_received(packet: packets.Packet) -> void:
 		_handle_player_msg(sender_id, packet.get_player())
 		
 func _handle_chat_msg(sender_id:int,chat_msg:packets.ChatMessage) ->void:
-	_log.chat("Client %d" % sender_id,chat_msg.get_msg())
+	if sender_id in _players:
+		var actor := _players[sender_id] as Actor
+		_log.chat(actor.actor_name, chat_msg.get_msg())
 
 
 #参数是输入框内消息
@@ -56,14 +60,16 @@ func _handle_player_msg(sender_id: int, player_msg: packets.PlayerMessage) -> vo
 
 	var is_player := actor_id == GameManager.client_id
 	
-	if actor_id not in _players:
+	if actor_id not in _players :
 		# This is a new player, so we need to create a new actor
 		var actor := Actor.instantiate(actor_id, actor_name, x, y, radius, speed, is_player)
 		_world.add_child(actor)
 		_players[actor_id] = actor
-	
-	#if actor_id in _players:
-		# This is an existing player, so we need to update their position
-		#var actor2 := _players.get(actor_id)
-		#actor2.position.x = x
-		#actor2.position.y = y
+	else:
+		var actor2 := _players[actor_id] as Actor
+		actor2.position.x = x
+		actor2.position.y = y
+		
+		var direction := player_msg.get_direction()
+		actor2.velocity = speed * Vector2.from_angle(direction)
+		
