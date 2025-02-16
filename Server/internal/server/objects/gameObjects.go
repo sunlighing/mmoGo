@@ -11,3 +11,9 @@ type Player struct {
 	Speed     float64 //速度
 }
 
+// 构成孢子的基本要素
+type Spore struct {
+	X      float64
+	Y      float64
+	Radius float64
+}

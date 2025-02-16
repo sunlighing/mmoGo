@@ -51,3 +51,15 @@ func NewPlayer(id uint64, player *objects.Player) Msg {
 		},
 	}
 }
+
+//生成一个孢子
+func NewSpore(id uint64, spore *objects.Spore) Msg {
+	return &Packet_Spore{
+		Spore: &SporeMessage{
+			Id:     id,
+			X:      spore.X,
+			Y:      spore.Y,
+			Radius: spore.Radius,
+		},
+	}
+}

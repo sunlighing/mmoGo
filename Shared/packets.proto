@@ -10,6 +10,7 @@ message OkResponseMessage { }
 message DenyResponseMessage { string reason = 2; }
 message PlayerMessage { uint64 id = 1; string name = 2; double x = 3; double y = 4; double radius = 5; double direction = 6; double speed = 7; }
 message PlayerDirectionMessage { double direction = 1; }
+message SporeMessage { uint64 id = 1; double x = 2; double y = 3; double radius = 4; }
 
 message Packet {
     uint64 sender_id = 1;
@@ -22,5 +23,6 @@ message Packet {
         DenyResponseMessage deny_response = 7;
         PlayerMessage player = 8;
         PlayerDirectionMessage player_direction = 9;
+        SporeMessage spore = 10;
     }
 }

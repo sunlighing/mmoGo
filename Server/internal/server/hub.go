@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"server/internal/server/db"
 	"server/internal/server/objects"
@@ -13,6 +14,9 @@ import (
 
 	_ "modernc.org/sqlite"
 )
+
+// 最大孢子的数量
+const MaxSpores int = 1000
 
 // Embed the database schema to be used when creating the database tables
 //
@@ -35,6 +39,8 @@ func (h *Hub) NewDbTx() *DbTx {
 type SharedGameObjects struct {
 	//这个ID 是client id 连接ID
 	Players *objects.SharedCollection[*objects.Player]
+	//这个是孢子池
+	Spores *objects.SharedCollection[*objects.Spore]
 }
 
 // 客户端状态机句柄
@@ -139,6 +145,7 @@ func NewHub() *Hub {
 		dbPool:         dbPool,
 		SharedGameObjects: &SharedGameObjects{
 			Players: objects.NewSharedCollection[*objects.Player](),
+			Spores:  objects.NewSharedCollection[*objects.Spore](), //生成一个孢子池的对象
 		},
 	}
 }
@@ -151,6 +158,16 @@ func (h *Hub) Run() {
 	if _, err := h.dbPool.ExecContext(context.Background(), schemaGenSql); err != nil {
 		log.Fatal(err)
 	}
+
+	// 测试用 生成不同的孢子
+	log.Println("Placing spores")
+
+	for i := 0; i < MaxSpores; i++ {
+		h.SharedGameObjects.Spores.Add(h.NewSpore())
+	}
+
+	//等待客户端连接
+	log.Println("Awaiting client registraions")
 
 	for {
 		select {
@@ -187,4 +204,11 @@ func (h *Hub) Server(getNewClient func(*Hub, http.ResponseWriter, *http.Request)
 	go client.WritePump()
 	go client.ReadPump()
 
+}
+
+// 新建一个孢子
+func (h *Hub) NewSpore() *objects.Spore {
+	sporeRadius := max(rand.NormFloat64()*3+10, 5)
+	x, y := objects.SpawnCoords()
+	return &objects.Spore{X: x, Y: y, Radius: sporeRadius}
 }
