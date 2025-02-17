@@ -30,6 +30,9 @@ func _on_ws_packet_received(packet: packets.Packet) -> void:
 		_handle_player_msg(sender_id, packet.get_player())
 	elif packet.has_spore():  #收到孢子信息
 		_handle_spore_msg(sender_id, packet.get_spore())
+	elif packet.has_spore_consumed(): #收到吃孢子的信息
+		_handle_spore_consumed_msg(sender_id, packet.get_spore_consumed())
+		
 		
 func _handle_chat_msg(sender_id:int,chat_msg:packets.ChatMessage) ->void:
 	if sender_id in _players:
@@ -92,7 +95,7 @@ func _add_actor(actor_id: int, actor_name: String, x: float, y: float, radius: f
 	_world.add_child(actor)
 	_players[actor_id] = actor as Actor
 	
-	if is_player:
+	if is_player: 
 		actor.area_entered.connect(_on_player_area_entered)
 		
 func _update_actor(actor_id: int, x: float, y: float, direction: float, speed: float, radius: float, is_player: bool) -> void:
@@ -109,15 +112,68 @@ func _update_actor(actor_id: int, x: float, y: float, direction: float, speed: f
 func _on_player_area_entered(area: Area2D) -> void:
 	if area is Spore:
 		_consume_spore(area as Spore)
+	elif area is Actor:
+		_collide_actor(area as Actor)
 		
 func _consume_spore(spore: Spore) -> void:
+	#吃下一个孢子后自己成长
+	var player = _players[GameManager.client_id]
+	var player_mass := _rad_to_mass(player.radius)
+	var spore_mass := _rad_to_mass(spore.radius)
+	_set_actor_mass(player, player_mass + spore_mass)
+	
 	var packet := packets.Packet.new()
 	var spore_consumed_msg := packet.new_spore_consumed()
 	spore_consumed_msg.set_spore_id(spore.spore_id)
 	WS.send(packet)
 	_remove_spore(spore)
-	
 
+func _collide_actor(actor: Actor) -> void:
+	var player := _players[GameManager.client_id] as Actor
+	var player_mass := _rad_to_mass(player.radius)
+	var actor_mass := _rad_to_mass(actor.radius)
+	
+	if player_mass > actor_mass * 1.5:
+		_consume_actor(actor)
+
+#删除孢子
 func _remove_spore(spore: Spore) -> void:
 	_spores.erase(spore.spore_id)
 	spore.queue_free()
+
+#删除角色
+func _remove_actor(actor: Actor) -> void:
+	_players.erase(actor.actor_id)
+	actor.queue_free()
+
+func _handle_spore_consumed_msg(sender_id: int, spore_consumed_msg: packets.SporeConsumedMessage) -> void:
+	if sender_id in _players:
+		var actor := _players[sender_id] as Actor
+		var actor_mass := _rad_to_mass(actor.radius)
+		
+		var spore_id := spore_consumed_msg.get_spore_id()
+		if spore_id in _spores:
+			var spore := _spores[spore_id] as Spore
+			var spore_mass := _rad_to_mass(spore.radius)
+			_set_actor_mass(actor, actor_mass + spore_mass)
+			_remove_spore(spore) #删除孢子
+			
+
+func _rad_to_mass(radius: float) -> float:
+	return radius * radius * PI
+
+#设置新的大小
+func _set_actor_mass(actor: Actor, new_mass: float) -> void:
+	actor.radius = sqrt(new_mass / PI)
+	
+func _consume_actor(actor: Actor) -> void:
+	var player := _players[GameManager.client_id] as Actor
+	var player_mass := _rad_to_mass(player.radius)
+	var actor_mass := _rad_to_mass(actor.radius)
+	_set_actor_mass(player, player_mass + actor_mass)
+	
+	var packet := packets.Packet.new()
+	var player_consumed_msg := packet.new_player_consumed()
+	player_consumed_msg.set_player_id(actor.actor_id)
+	WS.send(packet)
+	_remove_actor(actor)

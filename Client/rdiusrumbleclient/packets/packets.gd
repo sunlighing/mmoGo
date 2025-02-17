@@ -1211,6 +1211,91 @@ class SporeConsumedMessage:
 			return PB_ERR.PARSE_INCOMPLETE
 		return result
 	
+class SporesBatchMessage:
+	func _init():
+		var service
+		
+		_spores = PBField.new("spores", PB_DATA_TYPE.MESSAGE, PB_RULE.REPEATED, 1, true, [])
+		service = PBServiceField.new()
+		service.field = _spores
+		service.func_ref = Callable(self, "add_spores")
+		data[_spores.tag] = service
+		
+	var data = {}
+	
+	var _spores: PBField
+	func get_spores() -> Array:
+		return _spores.value
+	func clear_spores() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		_spores.value = []
+	func add_spores() -> SporeMessage:
+		var element = SporeMessage.new()
+		_spores.value.append(element)
+		return element
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
+class PlayerConsumedMessage:
+	func _init():
+		var service
+		
+		_player_id = PBField.new("player_id", PB_DATA_TYPE.UINT64, PB_RULE.OPTIONAL, 1, true, DEFAULT_VALUES_3[PB_DATA_TYPE.UINT64])
+		service = PBServiceField.new()
+		service.field = _player_id
+		data[_player_id.tag] = service
+		
+	var data = {}
+	
+	var _player_id: PBField
+	func get_player_id() -> int:
+		return _player_id.value
+	func clear_player_id() -> void:
+		data[1].state = PB_SERVICE_STATE.UNFILLED
+		_player_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.UINT64]
+	func set_player_id(value : int) -> void:
+		_player_id.value = value
+	
+	func _to_string() -> String:
+		return PBPacker.message_to_string(data)
+		
+	func to_bytes() -> PackedByteArray:
+		return PBPacker.pack_message(data)
+		
+	func from_bytes(bytes : PackedByteArray, offset : int = 0, limit : int = -1) -> int:
+		var cur_limit = bytes.size()
+		if limit != -1:
+			cur_limit = limit
+		var result = PBPacker.unpack_message(data, bytes, offset, cur_limit)
+		if result == cur_limit:
+			if PBPacker.check_required(data):
+				if limit == -1:
+					return PB_ERR.NO_ERRORS
+			else:
+				return PB_ERR.REQUIRED_FIELDS
+		elif limit == -1 && result > 0:
+			return PB_ERR.PARSE_INCOMPLETE
+		return result
+	
 class Packet:
 	func _init():
 		var service
@@ -1280,6 +1365,18 @@ class Packet:
 		service.func_ref = Callable(self, "new_spore_consumed")
 		data[_spore_consumed.tag] = service
 		
+		_spores_batch = PBField.new("spores_batch", PB_DATA_TYPE.MESSAGE, PB_RULE.OPTIONAL, 12, true, DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE])
+		service = PBServiceField.new()
+		service.field = _spores_batch
+		service.func_ref = Callable(self, "new_spores_batch")
+		data[_spores_batch.tag] = service
+		
+		_player_consumed = PBField.new("player_consumed", PB_DATA_TYPE.MESSAGE, PB_RULE.OPTIONAL, 13, true, DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE])
+		service = PBServiceField.new()
+		service.field = _player_consumed
+		service.func_ref = Callable(self, "new_player_consumed")
+		data[_player_consumed.tag] = service
+		
 	var data = {}
 	
 	var _sender_id: PBField
@@ -1319,6 +1416,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_chat.value = ChatMessage.new()
 		return _chat.value
 	
@@ -1350,6 +1451,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_id.value = IdMessage.new()
 		return _id.value
 	
@@ -1381,6 +1486,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_login_request.value = LoginRequestMessage.new()
 		return _login_request.value
 	
@@ -1412,6 +1521,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_register_request.value = RegisterRequestMessage.new()
 		return _register_request.value
 	
@@ -1443,6 +1556,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_ok_response.value = OkResponseMessage.new()
 		return _ok_response.value
 	
@@ -1474,6 +1591,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_deny_response.value = DenyResponseMessage.new()
 		return _deny_response.value
 	
@@ -1505,6 +1626,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_player.value = PlayerMessage.new()
 		return _player.value
 	
@@ -1536,6 +1661,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_player_direction.value = PlayerDirectionMessage.new()
 		return _player_direction.value
 	
@@ -1567,6 +1696,10 @@ class Packet:
 		data[10].state = PB_SERVICE_STATE.FILLED
 		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_spore.value = SporeMessage.new()
 		return _spore.value
 	
@@ -1598,8 +1731,82 @@ class Packet:
 		_spore.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
 		data[10].state = PB_SERVICE_STATE.UNFILLED
 		data[11].state = PB_SERVICE_STATE.FILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
 		_spore_consumed.value = SporeConsumedMessage.new()
 		return _spore_consumed.value
+	
+	var _spores_batch: PBField
+	func has_spores_batch() -> bool:
+		return data[12].state == PB_SERVICE_STATE.FILLED
+	func get_spores_batch() -> SporesBatchMessage:
+		return _spores_batch.value
+	func clear_spores_batch() -> void:
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+	func new_spores_batch() -> SporesBatchMessage:
+		_chat.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		_login_request.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[4].state = PB_SERVICE_STATE.UNFILLED
+		_register_request.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[5].state = PB_SERVICE_STATE.UNFILLED
+		_ok_response.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[6].state = PB_SERVICE_STATE.UNFILLED
+		_deny_response.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[7].state = PB_SERVICE_STATE.UNFILLED
+		_player.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[8].state = PB_SERVICE_STATE.UNFILLED
+		_player_direction.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[9].state = PB_SERVICE_STATE.UNFILLED
+		_spore.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[10].state = PB_SERVICE_STATE.UNFILLED
+		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[11].state = PB_SERVICE_STATE.UNFILLED
+		data[12].state = PB_SERVICE_STATE.FILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[13].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = SporesBatchMessage.new()
+		return _spores_batch.value
+	
+	var _player_consumed: PBField
+	func has_player_consumed() -> bool:
+		return data[13].state == PB_SERVICE_STATE.FILLED
+	func get_player_consumed() -> PlayerConsumedMessage:
+		return _player_consumed.value
+	func clear_player_consumed() -> void:
+		data[13].state = PB_SERVICE_STATE.UNFILLED
+		_player_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+	func new_player_consumed() -> PlayerConsumedMessage:
+		_chat.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[2].state = PB_SERVICE_STATE.UNFILLED
+		_id.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[3].state = PB_SERVICE_STATE.UNFILLED
+		_login_request.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[4].state = PB_SERVICE_STATE.UNFILLED
+		_register_request.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[5].state = PB_SERVICE_STATE.UNFILLED
+		_ok_response.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[6].state = PB_SERVICE_STATE.UNFILLED
+		_deny_response.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[7].state = PB_SERVICE_STATE.UNFILLED
+		_player.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[8].state = PB_SERVICE_STATE.UNFILLED
+		_player_direction.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[9].state = PB_SERVICE_STATE.UNFILLED
+		_spore.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[10].state = PB_SERVICE_STATE.UNFILLED
+		_spore_consumed.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[11].state = PB_SERVICE_STATE.UNFILLED
+		_spores_batch.value = DEFAULT_VALUES_3[PB_DATA_TYPE.MESSAGE]
+		data[12].state = PB_SERVICE_STATE.UNFILLED
+		data[13].state = PB_SERVICE_STATE.FILLED
+		_player_consumed.value = PlayerConsumedMessage.new()
+		return _player_consumed.value
 	
 	func _to_string() -> String:
 		return PBPacker.message_to_string(data)
